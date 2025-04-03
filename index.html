@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>早餐點餐系統 4.0</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #FFF8E1;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    #donut {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="p-4">
+  <h1 class="text-3xl mb-4">🥞 早餐點餐系統 4.0</h1>
+
+  <div class="mb-4">
+    <label class="block text-lg mb-2">訂購人姓名：</label>
+    <input id="customer" type="text" class="border p-2 rounded w-full" placeholder="請輸入您的姓名">
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-lg mb-2">備註：</label>
+    <input id="note" type="text" class="border p-2 rounded w-full" placeholder="例如：不要辣、醬少一點...">
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-lg mb-2">用餐方式：</label>
+    <select id="dineOption" class="border p-2 rounded w-full">
+      <option value="內用">內用</option>
+      <option value="外帶">外帶</option>
+    </select>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <h2 class="text-xl mb-2">菜單</h2>
+      <ul id="menu" class="space-y-2 max-h-[70vh] overflow-y-auto pr-2"></ul>
+    </div>
+    <div>
+      <h2 class="text-xl mb-2">已點餐點</h2>
+      <ul id="order" class="space-y-2 mb-4 max-h-[50vh] overflow-y-auto pr-2"></ul>
+      <div class="text-lg mb-2">總金額：<span id="total">0</span> 元</div>
+
+      <div class="mb-2">
+        <label class="block mb-1">客人付款金額：</label>
+        <input id="paid" type="number" class="border p-2 rounded w-full" placeholder="輸入金額">
+        <div class="mt-1">找零：<span id="change">0</span> 元</div>
+      </div>
+
+      <button id="checkout" class="mt-4 bg-yellow-400 px-4 py-2 rounded shadow hover:bg-yellow-300">結帳</button>
+
+      <div id="receipt" class="mt-4 p-4 bg-white rounded shadow hidden whitespace-pre-wrap"></div>
+    </div>
+  </div>
+
+  <div id="donut">🍩</div>
+
+  <script>
+    const menu = document.getElementById('menu');
+    const order = document.getElementById('order');
+    const total = document.getElementById('total');
+    const customer = document.getElementById('customer');
+    const note = document.getElementById('note');
+    const paid = document.getElementById('paid');
+    const change = document.getElementById('change');
+    const dineOption = document.getElementById('dineOption');
+    const receipt = document.getElementById('receipt');
+    const donut = document.getElementById('donut');
+    let orderList = [];
+
+    const items = [
+      { name: '草莓吐司', price: 20 }, { name: '奶油吐司', price: 20 }, { name: '花生吐司', price: 20 },
+      { name: '巧克力吐司', price: 20 }, { name: '吐司夾蛋', price: 30 }, { name: '火腿蛋吐司', price: 40 },
+      { name: '鮪魚蛋吐司', price: 45 }, { name: '肉鬆蛋吐司', price: 45 }, { name: '法國吐司', price: 50 },
+      { name: '漢堡肉夾蛋吐司', price: 50 }, { name: '花生厚片', price: 35 }, { name: '草莓厚片', price: 35 },
+      { name: '奶油厚片', price: 35 }, { name: '巧克力厚片', price: 35 }, { name: '奶酥厚片', price: 40 },
+      { name: '蒜味厚片', price: 40 }, { name: '起司厚片', price: 40 }, { name: '鮪魚厚片', price: 45 },
+      { name: '特製素食飯糰', price: 45 }, { name: '特製紫米飯糰', price: 50 }, { name: '招牌紫米燒肉飯糰', price: 65 },
+      { name: '全麥素三明治', price: 30 }, { name: '肉鬆三明治', price: 30 }, { name: '鮪魚三明治', price: 30 },
+      { name: '火腿三明治', price: 30 }, { name: '起司水果三明治', price: 55 }, { name: '鮪魚總匯三明治', price: 55 },
+      { name: '招牌燒肉總匯三明治', price: 60 }, { name: '古早味蘿蔔糕', price: 35 }, { name: '原味蛋餅', price: 30 },
+      { name: '青蔥蛋餅', price: 35 }, { name: '芝麻蛋餅', price: 40 }, { name: '火腿蛋餅', price: 40 },
+      { name: '肉鬆蛋餅', price: 45 }, { name: '鮪魚蛋餅', price: 45 }, { name: '起司蛋餅', price: 45 },
+      { name: '蔬菜蛋餅', price: 45 }, { name: '玉米蛋餅', price: 45 }, { name: '培根蛋餅', price: 50 },
+      { name: '招牌燒肉蛋餅', price: 60 }, { name: '紅茶小', price: 20 }, { name: '紅茶大', price: 40 },
+      { name: '紅茶豆漿小', price: 20 }, { name: '紅茶豆漿大', price: 40 }, { name: '養生黃豆漿小', price: 20 },
+      { name: '養生黃豆漿大', price: 40 }, { name: '養生黑豆漿小', price: 25 }, { name: '養生黑豆漿大', price: 50 },
+      { name: '山藥五穀米漿小', price: 25 }, { name: '山藥五穀米漿大', price: 50 }, { name: '鮮奶紅茶小', price: 25 },
+      { name: '鮮奶紅茶大', price: 50 }, { name: '咖啡牛奶小', price: 40 }, { name: '咖啡牛奶大', price: 80 }
+    ];
+
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<div class="flex items-center justify-between bg-yellow-100 p-2 rounded shadow">
+        <span>${item.name} - $${item.price}</span>
+        <div class="flex items-center space-x-2">
+          <button onclick="decreaseItem('${item.name}')" class="bg-red-300 px-2 rounded">-</button>
+          <span id="qty-${item.name}">0</span>
+          <button onclick="addItem('${item.name}', ${item.price})" class="bg-green-300 px-2 rounded">+</button>
+        </div>
+      </div>`;
+      menu.appendChild(li);
+    });
+
+    function addItem(name, price) {
+      const existing = orderList.find(i => i.name === name);
+      if (existing) {
+        existing.qty++;
+      } else {
+        orderList.push({ name, price, qty: 1 });
+      }
+      renderOrder();
+    }
+
+    function decreaseItem(name) {
+      const existing = orderList.find(i => i.name === name);
+      if (existing) {
+        existing.qty--;
+        if (existing.qty <= 0) {
+          orderList = orderList.filter(i => i.name !== name);
+        }
+        renderOrder();
+      }
+    }
+
+    function renderOrder() {
+      order.innerHTML = '';
+      let sum = 0;
+      orderList.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.name} x ${item.qty} - $${item.price * item.qty}`;
+        order.appendChild(li);
+        sum += item.price * item.qty;
+        document.getElementById(`qty-${item.name}`).textContent = item.qty;
+      });
+      total.textContent = sum;
+      const paidAmount = parseInt(paid.value) || 0;
+      change.textContent = paidAmount >= sum ? paidAmount - sum : 0;
+    }
+
+    paid.addEventListener('input', () => {
+      const sum = parseInt(total.textContent);
+      const paidAmount = parseInt(paid.value) || 0;
+      change.textContent = paidAmount >= sum ? paidAmount - sum : 0;
+    });
+
+    async function sendToSheet(data) {
+      try {
+        await fetch('https://sheet-api-demo.monday-helper.workers.dev/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+      } catch (e) {
+        console.error('無法傳送到 Google Sheet', e);
+      }
+    }
+
+    document.getElementById('checkout').addEventListener('click', async () => {
+      if (orderList.length === 0) {
+        alert('你還沒點任何東西喔！');
+        return;
+      }
+      if (customer.value.trim() === '') {
+        alert('請輸入訂購人姓名');
+        return;
+      }
+
+      const summary = orderList.map(i => `${i.name} x ${i.qty} - $${i.price * i.qty}`).join('\n');
+      const sum = parseInt(total.textContent);
+      const paidAmount = parseInt(paid.value) || 0;
+      const changeAmount = paidAmount >= sum ? paidAmount - sum : 0;
+      const data = {
+        timestamp: new Date().toLocaleString(),
+        customer: customer.value,
+        dineOption: dineOption.value,
+        note: note.value || '無',
+        order: summary,
+        total: sum,
+        paid: paidAmount,
+        change: changeAmount
+      };
+
+      donut.style.display = 'block';
+      await sendToSheet(data);
+      donut.style.display = 'none';
+
+      const receiptText = `🧾 收據\n-------------------\n訂購人：${data.customer}\n用餐方式：${data.dineOption}\n備註：${data.note}\n\n訂單內容：\n${summary}\n\n總金額：$${sum}\n付款金額：$${paidAmount}\n找零：$${changeAmount}\n-------------------\n🍩 感謝您的訂購！`;
+      receipt.textContent = receiptText;
+      receipt.classList.remove('hidden');
+
+      orderList = [];
+      customer.value = '';
+      note.value = '';
+      paid.value = '';
+      change.textContent = '0';
+      items.forEach(i => document.getElementById(`qty-${i.name}`).textContent = '0');
+      renderOrder();
+    });
+  </script>
+</body>
+</html>
