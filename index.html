@@ -162,7 +162,7 @@
 
     async function sendToSheet(data) {
       try {
-        await fetch('https://sheet-api-demo.monday-helper.workers.dev/', {
+        await fetch('https://script.google.com/macros/s/AKfycbwnfkM58kCgwUT3ZNmYQmMs40TA6o2GJaKxIMxyMnEapCgtdtwv5D6fI4dWPAfSIikcoQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
