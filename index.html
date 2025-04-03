@@ -164,8 +164,8 @@
       try {
         await fetch('https://script.google.com/macros/s/AKfycbwnfkM58kCgwUT3ZNmYQmMs40TA6o2GJaKxIMxyMnEapCgtdtwv5D6fI4dWPAfSIikcoQ/exec', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ payload: JSON.stringify(data) })
         });
       } catch (e) {
         console.error('無法傳送到 Google Sheet', e);
